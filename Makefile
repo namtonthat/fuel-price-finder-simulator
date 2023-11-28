@@ -1,3 +1,5 @@
+fuel_type := u91
+
 default:
 	@echo "Please use 'make install' to install the workflow"
 
@@ -8,5 +10,5 @@ install:
 
 run:
 	@echo "Running workflow..."
-	@sh ./run.sh
+	@poetry run python fuel-prices.py --fuel-type $(fuel_type)
 	@echo "Done!"

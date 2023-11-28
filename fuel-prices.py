@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+import argparse
 import json
 import getpass
 import logging
@@ -7,6 +8,7 @@ import platform
 import re
 import requests
 import subprocess
+from enum import Enum
 
 
 # Configure logging for console output
@@ -21,6 +23,15 @@ def remove_ansi_codes(s):
 
 
 TUNNEL_TIMEOUT = 20
+
+
+class FuelTypes(Enum):
+    E10 = "e10"
+    U91 = "u91"
+    U95 = "u95"
+    U98 = "u98"
+    LPG = "lpg"
+    DIESEL = "diesel"
 
 
 @dataclass
@@ -45,17 +56,17 @@ class FuelPrice:
         return (self.lat, self.lng)
 
 
-def get_cheapest_fuel_location():
+def get_cheapest_fuel_location(selected_fuel_type: FuelTypes):
     url = "https://projectzerothree.info/api.php?format=json"
     page = requests.get(url)
 
     data = json.loads(page.text)
     best_prices = data.get("regions")[0].get("prices")
+    fuel_type = FuelTypes[selected_fuel_type.upper()]
 
-    selected_fuel_type = "U91"
     for fuel_type_best_price in best_prices:
         single_fuel_price = FuelPrice(**fuel_type_best_price)
-        if selected_fuel_type == single_fuel_price.type:
+        if fuel_type.value == single_fuel_price.type.lower():
             logging.info(f"Cheapest fuel price {single_fuel_price.location}")
             return single_fuel_price.gps
 
@@ -141,7 +152,16 @@ def prompt_to_close_terminal():
 
 
 def main():
-    cheapest_fuel_location = get_cheapest_fuel_location()
+    parser = argparse.ArgumentParser(description="Simulate fuel prices")
+    parser.add_argument(
+        "--fuel-type",
+        type=str,
+        choices=[fuel_type.value for fuel_type in FuelTypes],
+        default=FuelTypes.U91.value,
+        help="The fuel type to simulate",
+    )
+    args = parser.parse_args()
+    cheapest_fuel_location = get_cheapest_fuel_location(selected_fuel_type=args.fuel_type)
 
     tunnel_process, rsd_info = start_tunnel_and_wait()
 
