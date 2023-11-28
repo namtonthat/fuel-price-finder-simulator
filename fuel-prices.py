@@ -20,6 +20,9 @@ def remove_ansi_codes(s):
     return ansi_escape.sub("", s)
 
 
+TUNNEL_TIMEOUT = 20
+
+
 @dataclass
 class FuelPrice:
     """Class to hold Fuel Price data"""
@@ -65,7 +68,7 @@ def start_tunnel_and_wait():
 
     try:
         # Start the command with pexpect
-        child = pexpect.spawn(command, timeout=10)
+        child = pexpect.spawn(command, timeout=TUNNEL_TIMEOUT)
 
         # Wait for the password prompt and send the password
         child.expect_exact("Password:")
@@ -133,8 +136,8 @@ def copy_simulate_command(cmd: str):
 
 
 def prompt_to_close_terminal():
-    input("Open a new terminal window and paste the command. Press Enter to continue...")
-    input("Once you have executed the command and are done, press Enter to close the tunnel and exit...")
+    prompt = ["Open a new terminal window and paste the command. Press Enter to continue...", "Once you have executed the command and are done, press Enter to close the tunnel and exit..."]
+    input(" ".join(prompt))
 
 
 def main():

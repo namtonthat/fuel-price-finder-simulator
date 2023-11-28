@@ -6,7 +6,7 @@ install:
 	@sh ./install.sh
 	@echo "Done!"
 
-run: install
+run:
 	@echo "Running workflow..."
 	@sh ./run.sh
 	@echo "Done!"
