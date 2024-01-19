@@ -1,3 +1,4 @@
+import curses
 from dataclasses import dataclass
 import argparse
 import json
@@ -12,7 +13,9 @@ from enum import Enum
 
 
 # Configure logging for console output
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+)
 
 logging.info("Script started.")
 
@@ -71,44 +74,47 @@ def get_cheapest_fuel_location(selected_fuel_type: FuelTypes):
             return single_fuel_price.gps
 
 
+# Function to manually set up the terminal
+def setup_terminal():
+    try:
+        # Initialize the terminal for 'xterm-kitty' or fallback to default
+        curses.setupterm(term="xterm-kitty")
+    except curses.error:
+        # Fallback to default terminal if specific terminal type is not found
+        curses.setupterm()
+
+
 def start_tunnel_and_wait():
+    # Set up terminal
+    setup_terminal()
     logging.info("Starting the rsd connection command...")
 
     command = "sudo -E poetry run python3 -m pymobiledevice3 remote start-quic-tunnel"
     logging.info("About to run command: %s", command)
 
-    try:
-        # Start the command with pexpect
-        child = pexpect.spawn(command, timeout=TUNNEL_TIMEOUT)
+    child = pexpect.spawn(command, timeout=TUNNEL_TIMEOUT)
 
-        # Wait for the password prompt and send the password
-        child.expect_exact("Password:")
-        child.sendline(getpass.getpass("Enter sudo password: "))
+    # Wait for the password prompt and send the password
+    child.expect_exact("Password:")
+    child.sendline(getpass.getpass("Enter sudo password: "))
 
-        index = child.expect(["Use the follow connection option:", pexpect.TIMEOUT, pexpect.EOF])
+    index = child.expect(
+        ["Use the follow connection option:", pexpect.TIMEOUT, pexpect.EOF]
+    )
 
-        if index == 0:
-            logging.info("Command output: %s", child.before.decode())
+    logging.info("Command output: %s", child.before.decode())
 
-            output = child.before.decode()
-            rsd_address_match = re.search(r"RSD Address: (\S+)", output)
-            rsd_port_match = re.search(r"RSD Port: (\S+)", output)
+    output = child.before.decode()
+    rsd_address_match = re.search(r"RSD Address: (\S+)", output)
+    rsd_port_match = re.search(r"RSD Port: (\S+)", output)
 
-            if rsd_address_match and rsd_port_match:
-                rsd_address = remove_ansi_codes(rsd_address_match.group(1))
-                rsd_port = remove_ansi_codes(rsd_port_match.group(1))
-                logging.info("Extracted RSD Address: %s, RSD Port: %s", rsd_address, rsd_port)
-                return child, (rsd_address, rsd_port)
+    if rsd_address_match and rsd_port_match:
+        rsd_address = remove_ansi_codes(rsd_address_match.group(1))
+        rsd_port = remove_ansi_codes(rsd_port_match.group(1))
+        logging.info("Extracted RSD Address: %s, RSD Port: %s", rsd_address, rsd_port)
+        return child, (rsd_address, rsd_port)
 
-            logging.error("Failed to extract RSD Address and Port")
-
-    except pexpect.exceptions.ExceptionPexpect as e:
-        logging.error("A pexpect exception occurred: %s", str(e))
-
-    except Exception as e:
-        logging.error("An unexpected exception occurred: %s", str(e))
-
-    return child, (None, None)
+    logging.error("Failed to extract RSD Address and Port")
 
 
 def print_simulate_command(gps_coords, rsd_info):
@@ -140,14 +146,21 @@ def print_simulate_command(gps_coords, rsd_info):
 
 def copy_simulate_command(cmd: str):
     # If on a macOS, copy the cmd_str to the clipboard
-    if platform.system() == "Darwin":  # macOS is identified as 'Darwin' with platform.system()
-        process = subprocess.Popen("pbcopy", universal_newlines=True, stdin=subprocess.PIPE)
+    if (
+        platform.system() == "Darwin"
+    ):  # macOS is identified as 'Darwin' with platform.system()
+        process = subprocess.Popen(
+            "pbcopy", universal_newlines=True, stdin=subprocess.PIPE
+        )
         process.communicate(cmd)
         logging.info("The command has been copied to your clipboard.")
 
 
 def prompt_to_close_terminal():
-    prompt = ["Open a new terminal window and paste the command. Press Enter to continue...", "Once you have executed the command and are done, press Enter to close the tunnel and exit..."]
+    prompt = [
+        "Open a new terminal window and paste the command. Press Enter to continue...",
+        "Once you have executed the command and are done, press Enter to close the tunnel and exit...",
+    ]
     input(" ".join(prompt))
 
 
@@ -161,7 +174,9 @@ def main():
         help="The fuel type to simulate",
     )
     args = parser.parse_args()
-    cheapest_fuel_location = get_cheapest_fuel_location(selected_fuel_type=args.fuel_type)
+    cheapest_fuel_location = get_cheapest_fuel_location(
+        selected_fuel_type=args.fuel_type
+    )
 
     tunnel_process, rsd_info = start_tunnel_and_wait()
 
@@ -170,6 +185,7 @@ def main():
         return
 
     try:
+        logging.info("rsd_info: %s", rsd_info)
         cmd = print_simulate_command(cheapest_fuel_location, rsd_info)
 
         # If on a macOS, copy the cmd_str to the clipboard
