@@ -89,7 +89,7 @@ def start_tunnel_and_wait():
     setup_terminal()
     logging.info("Starting the rsd connection command...")
 
-    command = "sudo -E poetry run python3 -m pymobiledevice3 remote start-quic-tunnel"
+    command = "sudo poetry run python3 -m pymobiledevice3 remote start-tunnel"
     logging.info("About to run command: %s", command)
 
     child = pexpect.spawn(command, timeout=TUNNEL_TIMEOUT)
