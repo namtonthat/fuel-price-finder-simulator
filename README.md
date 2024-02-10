@@ -14,12 +14,17 @@ A simple python script that scrapes `https://projectzerothree.info/prices.php` t
 `make run`
 - runs the `fuel-prices.py` script -> required for iOS 17 and above to simulate a location
 - to use an alternative fuel type, use the arg `fuel_type=<e10|u91|u95|u98|diesel|lpg>` i.e.
-`make run fuel_type=u95`
+```
+make run fuel_type=u95
+```
 
 1. Creates a tunnel - requires iPhone to be unlocked and a trusted device.
+
   a) Finds location the best price for given `fuel_type` (`U91` by default)
   b) Returns the GPS location (lat / long) which is used to simulate the location
+
 2. Populates the command required and copies to clipboard
+
 3.  **Manual step**
     - After the command has been copied, you'll need to open a new window and paste this into the Terminal.
     - This will mimic the location whilst active
